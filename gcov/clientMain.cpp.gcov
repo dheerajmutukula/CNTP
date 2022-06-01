@@ -1,0 +1,35 @@
+        -:    0:Source:../src/clientMain.cpp
+        -:    0:Graph:clientMain.gcno
+        -:    0:Data:-
+        -:    0:Runs:0
+        -:    1://program to execute client 
+        -:    2://#include<iostream>
+        -:    3://#include<string.h>
+        -:    4://#include<arpa/inet.h>
+        -:    5://#include<unistd.h>
+        -:    6:#include <client.h>
+        -:    7:using namespace std;
+    #####:    8:int main(){
+        -:    9:    while(1){
+    #####:   10:        string uname,passwd;
+    #####:   11:        Client client("127.0.0.1", 8088);
+    #####:   12:        cout<<"Please enter your username: ";
+    #####:   13:        cin>>uname;
+    #####:   14:        cout<<"Please enter your password: ";
+    #####:   15:        cin>>passwd;
+        -:   16:        //send username and password to server
+    #####:   17:        client.sendMessage((uname+" "+passwd).c_str());
+        -:   18:        
+        -:   19:        //receive message from server
+    #####:   20:        char* buffer = client.receiveMessage();
+    #####:   21:        if(buffer[0] == '1'){
+    #####:   22:            cout<<"Authentication successful!"<<endl;
+    #####:   23:            client.sync();
+    #####:   24:            break;
+        -:   25:        }
+        -:   26:        else{
+    #####:   27:            cout<<"Authentication failed!"<<endl;
+        -:   28:        }
+    #####:   29:    }    
+    #####:   30:    return 0;
+        -:   31:}

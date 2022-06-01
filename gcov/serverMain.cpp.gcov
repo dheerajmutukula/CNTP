@@ -1,0 +1,91 @@
+        -:    0:Source:../src/serverMain.cpp
+        -:    0:Graph:serverMain.gcno
+        -:    0:Data:serverMain.gcda
+        -:    0:Runs:1
+        -:    1://program to implement main logic
+        -:    2:#include<iostream>
+        -:    3:#include<string.h>
+        -:    4:#include<sstream>
+        -:    5:#include<fstream>
+        -:    6:#include<signal.h>
+        -:    7:#include<arpa/inet.h>
+        -:    8:#include<unistd.h>
+        -:    9:#include <server.h>
+        -:   10:using namespace std;
+        1:   11:int main(){
+        1:   12:    Server server(8088);
+        -:   13:    char buffer[1024];
+        -:   14:
+        -:   15:    while(1){
+        -:   16:
+        1:   17:    int clientfd = server.acceptClient();
+        1:   18:    pid_t pid = fork();
+    #####:   19:    perror("fork");
+        -:   20:
+    #####:   21:    if(pid == 0){ //child process
+    #####:   22:    memset(buffer, 0, sizeof(buffer));
+    #####:   23:    recv(clientfd, buffer, 1024, 0);
+        -:   24:    //check whether the buffer data is found in the database or not
+    #####:   25:    ifstream file("../data/users");
+    #####:   26:    string line,buf = buffer;
+    #####:   27:    if(file.is_open()){
+    #####:   28:        while(getline(file, line)){
+    #####:   29:            if(line == buf){
+    #####:   30:                send(clientfd, "1", 1, 0);
+    #####:   31:                cout << "Authentication successful!" << endl;
+    #####:   32:                break;
+        -:   33:            }
+        -:   34:        }
+    #####:   35:        file.close();
+    #####:   36:        if(line != buf){
+    #####:   37:            send(clientfd, "0", 1, 0);
+    #####:   38:            cout << "Authentication failed!" << endl;
+    #####:   39:            continue;
+        -:   40:        }
+        -:   41:        while(1){
+    #####:   42:            memset(buffer,0,sizeof(buffer));
+    #####:   43:            recv(clientfd, buffer, 1024, 0);
+        -:   44:            //read the hwclock in epoch time and send it to client 
+    #####:   45:             stringstream ss;
+    #####:   46:             ss << "hwclock -r";
+        -:   47:	    //ss << "hwclock --setepoch --getepoch=1970";
+    #####:   48:             string cmd = ss.str();
+    #####:   49:             FILE *fp = popen(cmd.c_str(), "r");
+    #####:   50:             if(fp == NULL){
+    #####:   51:                 perror("popen");
+    #####:   52:                 exit(1);
+        -:   53:             }
+        -:   54:             char buf[1024];
+    #####:   55:             while(fgets(buf, sizeof(buf), fp) != NULL){
+    #####:   56:		 std::cout << buf << std::endl;
+        -:   57:                 //send(clientfd, buf, strlen(buf), 0);
+    #####:   58:		 memset(buf,0,sizeof(buf));
+        -:   59:             }
+    #####:   60:             pclose(fp);
+    #####:   61:	    char* time = server.readFromNtpServer();
+    #####:   62:	    send(clientfd,time,strlen(time),0);
+        -:   63:
+        -:   64:           //send the system time in epoch time to client
+        -:   65:            // stringstream ss;
+        -:   66:            // ss << "date +%s";
+        -:   67:            // string cmd = ss.str();
+        -:   68:            // FILE *fp = popen(cmd.c_str(), "r");
+        -:   69:            // if(fp == NULL){
+        -:   70:            //     perror("popen");
+        -:   71:            //     exit(1);
+        -:   72:            // }
+        -:   73:            // char buf[1024];
+        -:   74:            // while(fgets(buf, sizeof(buf), fp) != NULL){
+        -:   75:            //     send(clientfd, buf, strlen(buf), 0);
+        -:   76:            // }
+        -:   77:            // pclose(fp);
+    #####:   78:        }
+        -:   79:    }
+    #####:   80:    close(clientfd);
+    #####:   81:    exit(0);
+        -:   82:    }
+    #####:   83:    signal(SIGCHLD,SIG_IGN);
+    #####:   84:    close(clientfd);
+    #####:   85:    }
+        -:   86:    return 0;
+        -:   87:}
